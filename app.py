@@ -1,5 +1,6 @@
 # Import necessary packages
 from flask import Flask, json, request, redirect, url_for, session, jsonify
+import json
 from flaskext.mysql import MySQL
 import pymysql
 from werkzeug.wrappers import response
@@ -83,7 +84,8 @@ def signup():
 
             # Insert user into userInfo
             cursor.execute("INSERT INTO userInfo VALUES(%s, %s, %s, %s);", user_id, user_fname, user_lname, user_pass)
-            
+            sql_connect.commit()
+
             resp = jsonify("User created!")
             resp.status_code = 200
 
@@ -118,8 +120,29 @@ def get_course(course_code):
         sql_connect = sql_var.connect()
         cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
 
+        # Query for pulling data from database based on course_code
         query = """SELECT *
-                    FROM"""
+                    FROM %s"""
+
+        cursor.execute(query, course_code)
+        rows = cursor.fetchmany()
+        
+        resp = jsonify("Query done. Response as follows:")
+        resp["data"] = json.dumps(rows)
+
+        resp.status_code = 200
+
+        # Close SQL connection
+        cursor.close()
+        sql_connect.close()
+
+        return resp
+    else:
+        resp = jsonify("Invalid request method")
+        resp.status_code = 400
+
+        return resp
+
 
 # App route for searching classes by professor name.
 @app.route("/search/professor/<professor_name>", methods=["GET"])
