@@ -62,7 +62,52 @@ def logout():
 # App route for /signup.
 @app.route("/signup", methods=["POST"])
 def signup():
-    return "Hello, World!"
+
+    # Create connection to SQL server. 
+    sql_connect = sql_var.connect()
+    cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+    try:
+
+        # Get data from user.
+        req = request.json()
+        user_fname = req["user_fname"]
+        user_lname = req["user_lname"]
+        user_id = req["user_id"]
+        user_pass = req["user_pass"]
+
+        cursor.execute("SELECT U.userId, U.passwordHash FROM userInfo U WHERE U.userId=%s", user_id)
+        rows = cursor.fetchmany()
+
+        if rows == None and request.method == "POST":
+
+            # Insert user into userInfo
+            cursor.execute("INSERT INTO userInfo VALUES(%s, %s, %s, %s", user_id, user_fname, user_lname, user_pass)
+            
+            resp = jsonify("User created!")
+            resp.status_code = 200
+
+            return resp
+        else:
+
+            # User with given user id already exists. Return response with this message
+            resp = jsonify("User already exists!")
+            resp.status_code = 400
+
+            return resp
+
+    except Exception as e:
+
+        # Catch error and return it. 
+        resp = jsonify(e)
+        resp.status_code = 400
+
+        return resp
+    finally:
+
+        # Close cursors and the sql conenction. 
+        cursor.close()
+        sql_connect.close()
 
 # App route for searching courses by course code, i.e. CS411, ECE220, and so on.
 @app.route("/search/class/<course_code>", methods=["GET"])
