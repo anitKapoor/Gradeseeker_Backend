@@ -82,7 +82,7 @@ def signup():
         if rows == None and request.method == "POST":
 
             # Insert user into userInfo
-            cursor.execute("INSERT INTO userInfo VALUES(%s, %s, %s, %s", user_id, user_fname, user_lname, user_pass)
+            cursor.execute("INSERT INTO userInfo VALUES(%s, %s, %s, %s);", user_id, user_fname, user_lname, user_pass)
             
             resp = jsonify("User created!")
             resp.status_code = 200
@@ -112,7 +112,14 @@ def signup():
 # App route for searching courses by course code, i.e. CS411, ECE220, and so on.
 @app.route("/search/class/<course_code>", methods=["GET"])
 def get_course(course_code):
-    return "Hello, World!"
+    if request.method == "GET":
+
+        # Initiate SQL server connection
+        sql_connect = sql_var.connect()
+        cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+        query = """SELECT *
+                    FROM"""
 
 # App route for searching classes by professor name.
 @app.route("/search/professor/<professor_name>", methods=["GET"])
