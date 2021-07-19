@@ -1,6 +1,9 @@
 # Import necessary packages
-from flask import Flask, request, redirect, url_for, session
+from flask import Flask, json, request, redirect, url_for, session, jsonify
 from flaskext.mysql import MySQL
+import pymysql
+from werkzeug.wrappers import response
+
 
 # Create vars for Flask and MySQL
 app = Flask(__name__)
@@ -15,11 +18,41 @@ sql_var.init_app(app)
 # App route for /login.
 @app.route("/login", methods=["POST"])
 def login():
-    if request.method == "POST":
-        user_id = request.form["user_id"]
-        user_pass = request.form["user_pass"]
 
-        session["user_id"] = user_id
+    # Create connection to SQL server. 
+    sql_connect = sql_var.connect()
+    cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+    try:
+
+        # Get details from request
+        req = request.json()
+        user_id = req["user_id"]
+        user_pass = req["user_pass"]
+
+        cursor.execute("SELECT U.passwordHash FROM userInfo U WHERE U.userId=%s", user_id)
+        rows = cursor.fetchmany()
+
+        if rows != None and rows.size() == 1 and rows[0][0] == user_pass:
+
+            # Respond to request with successful log in. 
+            resp = jsonify("User Logged In Successfully!")
+            resp.status_code = 200
+            return resp
+
+    except Exception as e:
+
+        # Return error message
+        resp = jsonify(e)
+        resp.status_code = 400
+
+        return resp
+
+    finally:
+
+        # Close cursor
+        cursor.close()
+        sql_connect.close()
 
 # App route for logout.
 @app.route("/logout")
