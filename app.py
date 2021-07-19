@@ -5,6 +5,11 @@ from flaskext.mysql import MySQL
 # Create vars for Flask and MySQL
 app = Flask(__name__)
 sql_var = MySQL()
+app.config['MYSQL_DATABASE_USER'] = 'root'
+app.config['MYSQL_DATABASE_PASSWORD'] = '1234'
+app.config['MYSQL_DATABASE_DB'] = 'gradeseeker'
+app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+
 sql_var.init_app(app)
 
 # App route for /login.
