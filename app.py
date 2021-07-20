@@ -10,14 +10,14 @@ from werkzeug.wrappers import response
 app = Flask(__name__)
 sql_var = MySQL()
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '1234'
+app.config['MYSQL_DATABASE_PASSWORD'] = '12345'
 app.config['MYSQL_DATABASE_DB'] = 'gradeseeker'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
 sql_var.init_app(app)
 
 # App route for /login.
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["GET"])
 def login():
 
     # Create connection to SQL server. 
@@ -31,10 +31,13 @@ def login():
         user_id = req["user_id"]
         user_pass = req["user_pass"]
 
-        cursor.execute("SELECT U.passwordHash FROM userInfo U WHERE U.userId=%s", user_id)
-        rows = cursor.fetchmany()
+        #user_id = "admin"
+        #user_pass = "7253e9cb94e77341954eb6e593b0aa13aa99371305ef5e8c2f81fb3aaa4b11a1"
 
-        if rows != None and rows.size() == 1 and rows[0][0] == user_pass:
+        cursor.execute("SELECT U.passwordHash FROM userInfo U WHERE U.userId=%s", user_id)
+        rows = cursor.fetchone()
+
+        if rows != None and rows["passwordHash"] == user_pass:
 
             # Respond to request with successful log in. 
             resp = jsonify("User Logged In Successfully!")
