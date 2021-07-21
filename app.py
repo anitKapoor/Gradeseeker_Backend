@@ -4,10 +4,13 @@ import json
 from flaskext.mysql import MySQL
 import pymysql
 from werkzeug.wrappers import response
+import hashlib as hs
+from flask_cors import CORS as cors
 
 
 # Create vars for Flask and MySQL
 app = Flask(__name__)
+cors(app=app)
 sql_var = MySQL()
 app.config['MYSQL_DATABASE_USER'] = 'root'
 app.config['MYSQL_DATABASE_PASSWORD'] = '1234'
@@ -16,8 +19,42 @@ app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
 sql_var.init_app(app)
 
+@app.route("/browse", methods=["POST"])
+def browse():
+    sql_connect = sql_var.connect()
+    cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+    cat = request.form.get('Category')
+    off = int(request.form.get('Offset'))
+
+    try: 
+        cursor.execute("SELECT * FROM " + cat + " LIMIT 20 OFFSET " + str(off*20))
+        rows = cursor.fetchall()
+
+        if rows != None:
+            resp = jsonify(rows)
+            resp.status_code = 200
+            resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+            resp.headers.add('Access-Control-Allow-Origin', '*')
+            resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+            return resp
+
+    except Exception as e:
+        resp = jsonify(e)
+        resp.status_code = 400
+        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        resp.headers.add('Access-Control-Allow-Origin', '*')
+        resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+        return resp
+
+    finally:
+        cursor.close()
+        sql_connect.close()
+
 # App route for /login.
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["GET"])
 def login():
 
     # Create connection to SQL server. 
@@ -32,9 +69,9 @@ def login():
         user_pass = req["user_pass"]
 
         cursor.execute("SELECT U.passwordHash FROM userInfo U WHERE U.userId=%s", user_id)
-        rows = cursor.fetchmany()
+        rows = cursor.fetchone()
 
-        if rows != None and rows.size() == 1 and rows[0][0] == user_pass:
+        if rows != None and rows["passwordHash"] == user_pass:
 
             # Respond to request with successful log in. 
             resp = jsonify("User Logged In Successfully!")
