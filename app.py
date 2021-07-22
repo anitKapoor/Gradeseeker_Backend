@@ -19,6 +19,46 @@ app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
 sql_var.init_app(app)
 
+@app.route("/prof", methods=["POST"])
+def prof():
+    sql_connect = sql_var.connect()
+    cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+    cat = request.form.get('Category')
+    id = request.form.get('ID')
+
+    try: 
+        if(cat == "classes"):
+            cursor.execute("SELECT crn, semester FROM teaches WHERE profId=%s", id)
+            rows = cursor.fetchall()
+        else:
+            cursor.execute()
+        
+        
+        
+        if rows != None:
+            resp = jsonify(rows)
+            resp.status_code = 200
+            resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+            resp.headers.add('Access-Control-Allow-Origin', '*')
+            resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+            return resp
+
+    except Exception as e:
+        resp = jsonify(e)
+        resp.status_code = 400
+        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        resp.headers.add('Access-Control-Allow-Origin', '*')
+        resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+        return resp
+
+    finally:
+        cursor.close()
+        sql_connect.close()
+
+
 @app.route("/browse", methods=["POST"])
 def browse():
     sql_connect = sql_var.connect()
@@ -28,7 +68,12 @@ def browse():
     off = int(request.form.get('Offset'))
 
     try: 
-        cursor.execute("SELECT * FROM " + cat + " LIMIT 20 OFFSET " + str(off*20))
+        if(cat == "professors"):
+            cursor.execute("SELECT p.id, p.firstName, p.lastName, r.ratings FROM professors p JOIN ratings r ON p.id=r.profId LIMIT 20 OFFSET " + str(off*20))
+        else:
+            cursor.execute()
+        # SELECT p.firstName, p.lastName, r.ratings FROM professors p JOIN ratings r ON p.id=r.profId LIMIT 20 OFFSET 0 
+        #
         rows = cursor.fetchall()
 
         if rows != None:
