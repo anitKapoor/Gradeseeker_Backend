@@ -224,6 +224,65 @@ def get_class_by_crn(crn_val):
         return resp
 
 # App route to view and update a user's profile.
-@app.route("/userprofile", methods=["GET", "POST"])
-def get_profile():
-    return "Hello, World!"
+@app.route("/userprofile=<user_id>", methods=["GET", "POST"])
+def get_profile(user_id):
+    # Initiate SQL server connection
+    sql_connect = sql_var.connect()
+    cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+    if request.method == "GET":
+
+        query = """SELECT U.firstName, U.lastName
+                   FROM userInfo U
+                   WHERE U.userId=%s"""
+        
+        cursor.execute(query, user_id)
+        rows = cursor.fetchone()
+
+        resp = jsonify(firstName = rows["firstName"], lastName = rows["lastName"])
+        resp.status_code = 200
+
+        # Close SQL connection
+        cursor.close()
+        sql_connect.close()
+
+        return resp
+
+    else:
+
+        req = request.get_json()
+        user_ufname = req["user_ufname"]
+        user_ulname = req["user_ulname"]
+        user_upass = req["user_upass"]
+
+        cursor.execute("UPDATE userInfo U SET U.firstName=%s, U.lastName=%s, U.passwordHash=%s WHERE U.userId=%s",(user_ufname, user_ulname, user_upass, user_id))
+        sql_connect.commit()
+
+        # Close SQL connection
+        cursor.close()
+        sql_connect.close()
+
+        resp = jsonify(update=1)
+        resp.status_code = 200
+
+        return resp
+
+@app.route("/delete=<user_id>", methods=["POST"])
+def del_user(user_id):
+    if request.method == "POST":
+        # Initiate SQL server connection
+        sql_connect = sql_var.connect()
+        cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+        cursor.execute("DELETE FROM userInfo U WHERE U.userId=%s", user_id)
+        sql_connect.commit()
+
+        # Close SQL connection
+        cursor.close()
+        sql_connect.close()
+
+        resp = jsonify(deleted=1)
+        resp.status_code = 200
+
+        return resp
+
