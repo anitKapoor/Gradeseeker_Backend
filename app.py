@@ -136,14 +136,15 @@ def get_course(course_code):
         cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
 
         # Query for pulling data from database based on course_code
-        query = """SELECT *
-                    FROM %s"""
+        query = """SELECT C.courseCode, C.courseTitle
+                   FROM courses C
+                   WHERE C.courseCode=%s
+                   GROUP BY C.courseCode;"""
 
         cursor.execute(query, course_code)
         rows = cursor.fetchmany()
         
-        resp = jsonify("Query done. Response as follows:")
-        resp["data"] = json.dumps(rows)
+        resp = jsonify(data = json.dumps(rows))
 
         resp.status_code = 200
 
@@ -175,8 +176,7 @@ def get_professor(professor_name):
         cursor.execute(query, professor_name)
         rows = cursor.fetchmany()
         
-        resp = jsonify("Query done. Response as follows:")
-        resp["data"] = json.dumps(rows)
+        resp = jsonify(data = json.dumps(rows))
 
         resp.status_code = 200
 
@@ -201,14 +201,14 @@ def get_class_by_crn(crn_val):
         cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
 
         # Query for pulling data from database based on course_code
-        query = """SELECT *
-                    FROM %s"""
+        query = """SELECT C.crn, C.courseCode, C.courseTitle
+                   FROM courses C
+                   WHERE C.crn = %s;"""
 
         cursor.execute(query, crn_val)
         rows = cursor.fetchmany()
         
-        resp = jsonify("Query done. Response as follows:")
-        resp["data"] = json.dumps(rows)
+        resp = jsonify(data = json.dumps(rows))
 
         resp.status_code = 200
 
