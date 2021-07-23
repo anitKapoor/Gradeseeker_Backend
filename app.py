@@ -31,8 +31,9 @@ def prof():
         if(cat == "classes"):
             cursor.execute("SELECT crn, semester FROM teaches WHERE profId=%s", id)
             rows = cursor.fetchall()
-        else:
-            cursor.execute()
+        if(cat== "average"):
+            cursor.execute("SELECT t.profId, ROUND(AVG(s.averageGPA), 2) AS av FROM teaches t NATURAL JOIN grades g NATURAL JOIN statistics s GROUP BY t.profId=%s", id)
+            rows = cursor.fetchone()
         
         
         
@@ -71,7 +72,7 @@ def browse():
         if(cat == "professors"):
             cursor.execute("SELECT p.id, p.firstName, p.lastName, r.ratings FROM professors p JOIN ratings r ON p.id=r.profId LIMIT 20 OFFSET " + str(off*20))
         else:
-            cursor.execute()
+            cursor.execute("SELECT c.crn, c.courseCode, c.courseTitle, ROUND(AVG(s.averageGPA), 2) AS av FROM courses c NATURAL JOIN grades g JOIN statistics s ON s.gradeId=g.gradeId GROUP BY g.crn LIMIT 20 OFFSET " + str(off*20))
         # SELECT p.firstName, p.lastName, r.ratings FROM professors p JOIN ratings r ON p.id=r.profId LIMIT 20 OFFSET 0 
         #
         rows = cursor.fetchall()
