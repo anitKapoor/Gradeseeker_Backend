@@ -19,6 +19,41 @@ app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
 sql_var.init_app(app)
 
+@app.route("/classes", methods=["POST"])
+def classes():
+    sql_connect = sql_var.connect()
+    cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+    crn = request.form.get('crn')
+
+    try: 
+        cursor.execute("SELECT p.firstName, p.lastName, t.semester FROM teaches t JOIN professors p ON t.profId=p.id WHERE t.crn=%s", crn)
+        rows = cursor.fetchall()      
+                
+        if rows != None:
+            print(rows)
+            resp = jsonify(rows)
+            resp.status_code = 200
+            resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+            resp.headers.add('Access-Control-Allow-Origin', '*')
+            resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+            return resp
+
+    except Exception as e:
+        resp = jsonify(e)
+        resp.status_code = 400
+        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        resp.headers.add('Access-Control-Allow-Origin', '*')
+        resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+        return resp
+
+    finally:
+        cursor.close()
+        sql_connect.close()
+
+
 @app.route("/prof", methods=["POST"])
 def prof():
     sql_connect = sql_var.connect()
