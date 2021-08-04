@@ -361,8 +361,8 @@ def get_professor(professor_name):
 
         name_sep = str(professor_name).split(',')
         # Query for pulling data from database based on course_code
-        query = f"""SELECT C.CourseCode, C.courseTitle, T.semester, P.firstName, P.lastName 
-                   FROM (courses C NATURAL JOIN teaches T) JOIN professors P ON (P.id = T.profId)
+        query = f"""SELECT C.CourseCode, C.courseTitle, T.semester, P.firstName, P.lastName, P.id as id, ABS(ROUND(r.ratings, 1)) as rating, ROUND(AVG(s.averageGPA), 2) as av
+                   FROM (((courses C NATURAL JOIN grades g JOIN statistics s ON s.gradeId=g.gradeId) NATURAL JOIN teaches T) JOIN professors P ON (P.id = T.profId)) JOIN ratings r ON (P.id = r.profId)
                    WHERE P.firstName LIKE "%{name_sep[0]}%" AND P.lastName = "{name_sep[1]}\r"                
                    GROUP BY C.CourseCode;"""
 
