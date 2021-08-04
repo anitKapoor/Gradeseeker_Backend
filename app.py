@@ -249,10 +249,6 @@ def login():
 
         cursor.execute("SELECT U.passwordHash FROM userinfo U WHERE U.userId=%s", user_id)
         rows = cursor.fetchone()
-
-        print(rows)
-        print(user_pass)
-        print(rows["passwordHash"] == user_pass)
         if rows != None and rows["passwordHash"] == user_pass:
             
             # Respond to request with successful log in. 
@@ -379,7 +375,7 @@ def get_professor(professor_name):
 
         name_sep = str(professor_name).split(',')
         # Query for pulling data from database based on course_code
-        query = f"""SELECT C.CourseCode, C.courseTitle, T.semester, P.firstName, P.lastName, P.id as id, ABS(ROUND(r.ratings, 1)) as rating, ROUND(AVG(s.averageGPA), 2) as av
+        query = f"""SELECT C.crn, C.CourseCode, C.courseTitle, T.semester, P.firstName, P.lastName, P.id as id, ABS(ROUND(r.ratings, 1)) as rating, ROUND(AVG(s.averageGPA), 2) as av
                    FROM (((courses C NATURAL JOIN grades g JOIN statistics s ON s.gradeId=g.gradeId) NATURAL JOIN teaches T) JOIN professors P ON (P.id = T.profId)) JOIN ratings r ON (P.id = r.profId)
                    WHERE P.firstName LIKE "%{name_sep[0]}%" AND P.lastName = "{name_sep[1]}\r"                
                    GROUP BY C.CourseCode;"""
@@ -412,8 +408,8 @@ def get_class_by_crn(crn_val):
         cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
 
         # Query for pulling data from database based on course_code
-        query = """SELECT C.crn, C.courseCode, C.courseTitle
-                   FROM courses C
+        query = """SELECT C.crn, C.courseCode, C.courseTitle, ROUND(AVG(s.averageGPA),2) as av
+                   FROM courses C NATURAL JOIN grades g NATURAL JOIN statistics s
                    WHERE C.crn = %s;"""
 
         cursor.execute(query, crn_val)
