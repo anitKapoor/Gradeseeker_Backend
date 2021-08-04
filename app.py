@@ -350,16 +350,18 @@ def get_course(course_code):
 @app.route("/search/professor/<professor_name>", methods=["GET"])
 def get_professor(professor_name):
     if request.method == "GET":
-
         # Initiate SQL server connection
         sql_connect = sql_var.connect()
         cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
 
+        name_sep = str(professor_name).split(',')
         # Query for pulling data from database based on course_code
-        query = """SELECT *
-                    FROM %s"""
+        query = f"""SELECT C.CourseCode, C.courseTitle, T.semester, P.firstName, P.lastName 
+                   FROM (courses C NATURAL JOIN teaches T) JOIN professors P ON (P.id = T.profId)
+                   WHERE P.firstName LIKE "%{name_sep[0]}%" AND P.lastName = "{name_sep[1]}\r"                
+                   GROUP BY C.CourseCode;"""
 
-        cursor.execute(query, professor_name)
+        cursor.execute(query)
         rows = cursor.fetchmany()
         
         resp = jsonify(data = json.dumps(rows))
