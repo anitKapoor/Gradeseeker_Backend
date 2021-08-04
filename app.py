@@ -19,6 +19,80 @@ app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
 sql_var.init_app(app)
 
+@app.route("/postComm", methods=["POST"])
+def postComm():
+    sql_connect = sql_var.connect()
+    cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+    req = request.get_json()
+    print((req))
+    id = req['ID']
+    comm = req['comm']
+    rat = req['rat']
+    crn = req['crn']
+    user = req['userId']
+
+    try: 
+        cursor.execute("INSERT INTO comments VALUES (%s, %s, %s, %s, %s)", (user, id, comm, crn, rat))
+        sql_connect.commit()
+        rows = "success"     
+                
+        if rows != None:
+            resp = jsonify(rows)
+            resp.status_code = 200
+            resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+            resp.headers.add('Access-Control-Allow-Origin', '*')
+            resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+            return resp
+
+    except Exception as e:
+        resp = jsonify(e)
+        resp.status_code = 400
+        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        resp.headers.add('Access-Control-Allow-Origin', '*')
+        resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+        return resp
+
+    finally:
+        cursor.close()
+        sql_connect.close()
+
+
+@app.route("/getComm", methods=["POST"])
+def getComm():
+    sql_connect = sql_var.connect()
+    cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+    id = request.form.get('ID')
+
+    try: 
+        cursor.execute("SELECT c.userId, c.comments, o.courseCode FROM comments c NATURAL JOIN courses o WHERE profId=%s", id)
+        rows = cursor.fetchall()      
+                
+        if rows != None:
+            resp = jsonify(rows)
+            resp.status_code = 200
+            resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+            resp.headers.add('Access-Control-Allow-Origin', '*')
+            resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+            return resp
+
+    except Exception as e:
+        resp = jsonify(e)
+        resp.status_code = 400
+        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        resp.headers.add('Access-Control-Allow-Origin', '*')
+        resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+        return resp
+
+    finally:
+        cursor.close()
+        sql_connect.close()
+
 @app.route("/classes", methods=["POST"])
 def classes():
     sql_connect = sql_var.connect()
@@ -31,7 +105,6 @@ def classes():
         rows = cursor.fetchall()      
                 
         if rows != None:
-            print(rows)
             resp = jsonify(rows)
             resp.status_code = 200
             resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
@@ -61,7 +134,7 @@ def prof():
 
     cat = request.form.get('Category')
     id = request.form.get('ID')
-
+    rows = None
     try: 
         if(cat == "classes"):
             cursor.execute("SELECT crn, semester FROM teaches WHERE profId=%s", id)
