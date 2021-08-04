@@ -341,14 +341,12 @@ def get_course(course_code):
         cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
 
         # Query for pulling data from database based on course_code
-        query = """SELECT C.courseCode, C.courseTitle
+        query = """SELECT C.courseCode, C.courseTitle, C.crn
                    FROM courses C
-                   WHERE C.courseCode=%s
-                   GROUP BY C.courseCode;"""
+                   WHERE C.courseCode=%s;;"""
 
         cursor.execute(query, course_code)
-        rows = cursor.fetchmany()
-        
+        rows = cursor.fetchall()
         resp = jsonify(data = json.dumps(rows))
 
         resp.status_code = 200
