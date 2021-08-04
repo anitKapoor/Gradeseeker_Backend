@@ -108,6 +108,22 @@ def classes():
         if(cat == "stats"):
             cursor.execute("SELECT g.crn, ROUND(AVG(s.standardDeviation), 2) AS std, ROUND(AVG(s.perc4s),2) AS perc FROM grades g NATURAL JOIN statistics s WHERE g.crn=%s", crn)
             rows = cursor.fetchall()
+        if(cat == "best"):
+            params = [crn, "@_BestProf_1",  "@_BestProf_2"]
+            cursor.callproc("BestProf", params)
+            cursor.execute("SELECT @_BestProf_1, @_BestProf_2")
+            rows = cursor.fetchone()
+            print(rows)
+            cursor.execute("SELECT p.firstName, p.lastName FROM professors p WHERE p.id=%s", rows['@_BestProf_1'])
+            row1 = cursor.fetchone()
+            print(row1)
+            cursor.execute("SELECT p.firstName, p.lastName FROM professors p WHERE p.id=%s", rows['@_BestProf_2'])
+            row2 = cursor.fetchone()
+            print(row1)
+            print(row2)
+            resp = jsonify(b1=row1, b2=row2)
+            print(resp.data)
+            return resp
                 
         if rows != None:
             resp = jsonify(rows)
