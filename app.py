@@ -4,6 +4,7 @@ import json
 from flaskext.mysql import MySQL
 import pymysql
 from werkzeug.wrappers import response
+import hashlib as hs
 from flask_cors import CORS as cors
 
 
@@ -18,8 +19,123 @@ app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
 sql_var.init_app(app)
 
+@app.route("/classes", methods=["POST"])
+def classes():
+    sql_connect = sql_var.connect()
+    cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+    crn = request.form.get('crn')
+
+    try: 
+        cursor.execute("SELECT p.firstName, p.lastName, t.semester FROM teaches t JOIN professors p ON t.profId=p.id WHERE t.crn=%s", crn)
+        rows = cursor.fetchall()      
+                
+        if rows != None:
+            print(rows)
+            resp = jsonify(rows)
+            resp.status_code = 200
+            resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+            resp.headers.add('Access-Control-Allow-Origin', '*')
+            resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+            return resp
+
+    except Exception as e:
+        resp = jsonify(e)
+        resp.status_code = 400
+        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        resp.headers.add('Access-Control-Allow-Origin', '*')
+        resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+        return resp
+
+    finally:
+        cursor.close()
+        sql_connect.close()
+
+
+@app.route("/prof", methods=["POST"])
+def prof():
+    sql_connect = sql_var.connect()
+    cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+    cat = request.form.get('Category')
+    id = request.form.get('ID')
+
+    try: 
+        if(cat == "classes"):
+            cursor.execute("SELECT crn, semester FROM teaches WHERE profId=%s", id)
+            rows = cursor.fetchall()
+        if(cat== "average"):
+            cursor.execute("SELECT t.profId, ROUND(AVG(s.averageGPA), 2) AS av FROM teaches t NATURAL JOIN grades g NATURAL JOIN statistics s GROUP BY t.profId=%s", id)
+            rows = cursor.fetchone()
+        
+        
+        
+        if rows != None:
+            resp = jsonify(rows)
+            resp.status_code = 200
+            resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+            resp.headers.add('Access-Control-Allow-Origin', '*')
+            resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+            return resp
+
+    except Exception as e:
+        resp = jsonify(e)
+        resp.status_code = 400
+        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        resp.headers.add('Access-Control-Allow-Origin', '*')
+        resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+        return resp
+
+    finally:
+        cursor.close()
+        sql_connect.close()
+
+
+@app.route("/browse", methods=["POST"])
+def browse():
+    sql_connect = sql_var.connect()
+    cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+    cat = request.form.get('Category')
+    off = int(request.form.get('Offset'))
+
+    try: 
+        if(cat == "professors"):
+            cursor.execute("SELECT p.id, p.firstName, p.lastName, r.ratings FROM professors p JOIN ratings r ON p.id=r.profId LIMIT 20 OFFSET " + str(off*20))
+        else:
+            cursor.execute("SELECT c.crn, c.courseCode, c.courseTitle, ROUND(AVG(s.averageGPA), 2) AS av FROM courses c NATURAL JOIN grades g JOIN statistics s ON s.gradeId=g.gradeId GROUP BY g.crn LIMIT 20 OFFSET " + str(off*20))
+        # SELECT p.firstName, p.lastName, r.ratings FROM professors p JOIN ratings r ON p.id=r.profId LIMIT 20 OFFSET 0 
+        #
+        rows = cursor.fetchall()
+
+        if rows != None:
+            resp = jsonify(rows)
+            resp.status_code = 200
+            resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+            resp.headers.add('Access-Control-Allow-Origin', '*')
+            resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+            return resp
+
+    except Exception as e:
+        resp = jsonify(e)
+        resp.status_code = 400
+        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        resp.headers.add('Access-Control-Allow-Origin', '*')
+        resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+        return resp
+
+    finally:
+        cursor.close()
+        sql_connect.close()
+
 # App route for /login.
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["GET"])
 def login():
 
     # Create connection to SQL server. 
