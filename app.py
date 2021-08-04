@@ -135,7 +135,7 @@ def browse():
         sql_connect.close()
 
 # App route for /login.
-@app.route("/login", methods=["GET"])
+@app.route("/login", methods=["POST"])
 def login():
 
     # Create connection to SQL server. 
