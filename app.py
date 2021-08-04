@@ -32,26 +32,25 @@ def login():
         req = request.get_json()
         user_id = req["user_id"]
         user_pass = req["user_pass"]
-
-        print(req)
-
-        print(user_id + "\n" + user_pass)
         #user_id = "admin"
         #user_pass = "7253e9cb94e77341954eb6e593b0aa13aa99371305ef5e8c2f81fb3aaa4b11a1"
 
         cursor.execute("SELECT U.passwordHash FROM userInfo U WHERE U.userId=%s", user_id)
         rows = cursor.fetchone()
 
+        print(rows)
+        print(user_pass)
+        print(rows["passwordHash"] == user_pass)
         if rows != None and rows["passwordHash"] == user_pass:
-
+            
             # Respond to request with successful log in. 
-            resp = resp = jsonify(login_attempt=1)
+            resp = jsonify(login_attempt=1)
             resp.status_code = 200
             return resp
         else:
 
             # Incorrect login information provided.
-            resp = resp = jsonify(login_attempt=0)
+            resp = jsonify(login_attempt=0)
             return resp
 
     except Exception as e:
@@ -92,8 +91,6 @@ def signup():
 
         cursor.execute("SELECT U.userId, U.passwordHash FROM userInfo U WHERE U.userId=%s", user_id)
         rows = cursor.fetchone()
-
-        print(rows)
 
         if rows == None and request.method == "POST":
 
