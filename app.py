@@ -163,7 +163,9 @@ def prof():
         if(cat== "average"):
             cursor.execute("SELECT t.profId, ROUND(AVG(s.averageGPA), 2) AS av FROM teaches t NATURAL JOIN grades g NATURAL JOIN statistics s GROUP BY t.profId=%s", id)
             rows = cursor.fetchone()
-        
+        if(cat== "update"):
+            cursor.execute("SELECT ABS(ratings) FROM ratings WHERE profId=%s", id)
+            rows = cursor.fetchone()
         
         
         if rows != None:
