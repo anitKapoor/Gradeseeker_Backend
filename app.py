@@ -13,7 +13,7 @@ app = Flask(__name__)
 cors(app=app)
 sql_var = MySQL()
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '1234'
+app.config['MYSQL_DATABASE_PASSWORD'] = '12345'
 app.config['MYSQL_DATABASE_DB'] = 'gradeseeker'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
@@ -145,9 +145,15 @@ def login():
     try:
 
         # Get details from request
-        req = request.json()
+        req = request.get_json()
         user_id = req["user_id"]
         user_pass = req["user_pass"]
+
+        print(req)
+
+        print(user_id + "\n" + user_pass)
+        #user_id = "admin"
+        #user_pass = "7253e9cb94e77341954eb6e593b0aa13aa99371305ef5e8c2f81fb3aaa4b11a1"
 
         cursor.execute("SELECT U.passwordHash FROM userInfo U WHERE U.userId=%s", user_id)
         rows = cursor.fetchone()
@@ -155,14 +161,19 @@ def login():
         if rows != None and rows["passwordHash"] == user_pass:
 
             # Respond to request with successful log in. 
-            resp = jsonify("User Logged In Successfully!")
+            resp = resp = jsonify(login_attempt=1)
             resp.status_code = 200
+            return resp
+        else:
+
+            # Incorrect login information provided.
+            resp = resp = jsonify(login_attempt=0)
             return resp
 
     except Exception as e:
 
         # Return error message
-        resp = jsonify(e)
+        resp = jsonify(error=e)
         resp.status_code = 400
 
         return resp
@@ -189,29 +200,31 @@ def signup():
     try:
 
         # Get data from user.
-        req = request.json()
+        req = request.get_json()
         user_fname = req["user_fname"]
         user_lname = req["user_lname"]
         user_id = req["user_id"]
         user_pass = req["user_pass"]
 
         cursor.execute("SELECT U.userId, U.passwordHash FROM userInfo U WHERE U.userId=%s", user_id)
-        rows = cursor.fetchmany()
+        rows = cursor.fetchone()
+
+        print(rows)
 
         if rows == None and request.method == "POST":
 
             # Insert user into userInfo
-            cursor.execute("INSERT INTO userInfo VALUES(%s, %s, %s, %s);", user_id, user_fname, user_lname, user_pass)
+            cursor.execute("INSERT INTO userInfo VALUES(%s, %s, %s, %s, %s);", (user_id, user_fname, user_lname, user_pass, user_id))
             sql_connect.commit()
 
-            resp = jsonify("User created!")
+            resp = jsonify(signup_attempt=1)
             resp.status_code = 200
 
             return resp
         else:
 
             # User with given user id already exists. Return response with this message
-            resp = jsonify("User already exists!")
+            resp = jsonify(signup_attempt=0)
             resp.status_code = 400
 
             return resp
@@ -219,7 +232,7 @@ def signup():
     except Exception as e:
 
         # Catch error and return it. 
-        resp = jsonify(e)
+        resp = jsonify(error=e)
         resp.status_code = 400
 
         return resp
@@ -239,14 +252,15 @@ def get_course(course_code):
         cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
 
         # Query for pulling data from database based on course_code
-        query = """SELECT *
-                    FROM %s"""
+        query = """SELECT C.courseCode, C.courseTitle
+                   FROM courses C
+                   WHERE C.courseCode=%s
+                   GROUP BY C.courseCode;"""
 
         cursor.execute(query, course_code)
         rows = cursor.fetchmany()
         
-        resp = jsonify("Query done. Response as follows:")
-        resp["data"] = json.dumps(rows)
+        resp = jsonify(data = json.dumps(rows))
 
         resp.status_code = 200
 
@@ -265,14 +279,126 @@ def get_course(course_code):
 # App route for searching classes by professor name.
 @app.route("/search/professor/<professor_name>", methods=["GET"])
 def get_professor(professor_name):
-    return "Hello, World!"
+    if request.method == "GET":
+
+        # Initiate SQL server connection
+        sql_connect = sql_var.connect()
+        cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+        # Query for pulling data from database based on course_code
+        query = """SELECT *
+                    FROM %s"""
+
+        cursor.execute(query, professor_name)
+        rows = cursor.fetchmany()
+        
+        resp = jsonify(data = json.dumps(rows))
+
+        resp.status_code = 200
+
+        # Close SQL connection
+        cursor.close()
+        sql_connect.close()
+
+        return resp
+    else:
+        resp = jsonify("Invalid request method")
+        resp.status_code = 400
+
+        return resp
 
 # App route for searching classes by CRN (course registration number).
 @app.route("/search/crn/<crn_val>", methods=["GET"])
 def get_class_by_crn(crn_val):
-    return "Hello, World!"
+    if request.method == "GET":
+
+        # Initiate SQL server connection
+        sql_connect = sql_var.connect()
+        cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+        # Query for pulling data from database based on course_code
+        query = """SELECT C.crn, C.courseCode, C.courseTitle
+                   FROM courses C
+                   WHERE C.crn = %s;"""
+
+        cursor.execute(query, crn_val)
+        rows = cursor.fetchmany()
+        
+        resp = jsonify(data = json.dumps(rows))
+
+        resp.status_code = 200
+
+        # Close SQL connection
+        cursor.close()
+        sql_connect.close()
+
+        return resp
+    else:
+        resp = jsonify("Invalid request method")
+        resp.status_code = 400
+
+        return resp
 
 # App route to view and update a user's profile.
-@app.route("/userprofile", methods=["GET", "POST"])
-def get_profile():
-    return "Hello, World!"
+@app.route("/userprofile=<user_id>", methods=["GET", "POST"])
+def get_profile(user_id):
+    # Initiate SQL server connection
+    sql_connect = sql_var.connect()
+    cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+    if request.method == "GET":
+
+        query = """SELECT U.firstName, U.lastName
+                   FROM userInfo U
+                   WHERE U.userId=%s"""
+        
+        cursor.execute(query, user_id)
+        rows = cursor.fetchone()
+
+        resp = jsonify(firstName = rows["firstName"], lastName = rows["lastName"])
+        resp.status_code = 200
+
+        # Close SQL connection
+        cursor.close()
+        sql_connect.close()
+
+        return resp
+
+    else:
+
+        req = request.get_json()
+        user_ufname = req["user_ufname"]
+        user_ulname = req["user_ulname"]
+        user_upass = req["user_upass"]
+
+        cursor.execute("UPDATE userInfo U SET U.firstName=%s, U.lastName=%s, U.passwordHash=%s WHERE U.userId=%s",(user_ufname, user_ulname, user_upass, user_id))
+        sql_connect.commit()
+
+        # Close SQL connection
+        cursor.close()
+        sql_connect.close()
+
+        resp = jsonify(update=1)
+        resp.status_code = 200
+
+        return resp
+
+@app.route("/delete=<user_id>", methods=["POST"])
+def del_user(user_id):
+    if request.method == "POST":
+        # Initiate SQL server connection
+        sql_connect = sql_var.connect()
+        cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
+
+        cursor.execute("DELETE FROM userInfo U WHERE U.userId=%s", user_id)
+        sql_connect.commit()
+
+        # Close SQL connection
+        cursor.close()
+        sql_connect.close()
+
+        resp = jsonify(deleted=1)
+        resp.status_code = 200
+
+        return resp
+
