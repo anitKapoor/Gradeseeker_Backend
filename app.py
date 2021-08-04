@@ -16,10 +16,9 @@ sql_var = MySQL()
 app.config['MYSQL_DATABASE_USER'] = 'root'
 app.config['MYSQL_DATABASE_PASSWORD'] = '12345'
 app.config['MYSQL_DATABASE_DB'] = 'gradeseeker'
-app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+app.config['MYSQL_DATABASE_HOST'] = '34.67.144.102'
 
 sql_var.init_app(app)
-
 @app.route("/postComm", methods=["POST"])
 def postComm():
     sql_connect = sql_var.connect()
@@ -230,7 +229,7 @@ def login():
         #user_id = "admin"
         #user_pass = "7253e9cb94e77341954eb6e593b0aa13aa99371305ef5e8c2f81fb3aaa4b11a1"
 
-        cursor.execute("SELECT U.passwordHash FROM userInfo U WHERE U.userId=%s", user_id)
+        cursor.execute("SELECT U.passwordHash FROM userinfo U WHERE U.userId=%s", user_id)
         rows = cursor.fetchone()
 
         print(rows)
@@ -284,13 +283,13 @@ def signup():
         user_id = req["user_id"]
         user_pass = req["user_pass"]
 
-        cursor.execute("SELECT U.userId, U.passwordHash FROM userInfo U WHERE U.userId=%s", user_id)
+        cursor.execute("SELECT U.userId, U.passwordHash FROM userinfo U WHERE U.userId=%s", user_id)
         rows = cursor.fetchone()
 
         if rows == None and request.method == "POST":
 
             # Insert user into userInfo
-            cursor.execute("INSERT INTO userInfo VALUES(%s, %s, %s, %s, %s);", (user_id, user_fname, user_lname, user_pass, user_id))
+            cursor.execute("INSERT INTO userinfo VALUES(%s, %s, %s, %s, %s);", (user_id, user_fname, user_lname, user_pass, user_id))
             sql_connect.commit()
 
             resp = jsonify(signup_attempt=1)
@@ -427,7 +426,7 @@ def get_profile(user_id):
     if request.method == "GET":
 
         query = """SELECT U.firstName, U.lastName
-                   FROM userInfo U
+                   FROM userinfo U
                    WHERE U.userId=%s"""
         
         cursor.execute(query, user_id)
@@ -449,7 +448,7 @@ def get_profile(user_id):
         user_ulname = req["user_ulname"]
         user_upass = req["user_upass"]
 
-        cursor.execute("UPDATE userInfo U SET U.firstName=%s, U.lastName=%s, U.passwordHash=%s WHERE U.userId=%s",(user_ufname, user_ulname, user_upass, user_id))
+        cursor.execute("UPDATE userinfo U SET U.firstName=%s, U.lastName=%s, U.passwordHash=%s WHERE U.userId=%s",(user_ufname, user_ulname, user_upass, user_id))
         sql_connect.commit()
 
         # Close SQL connection
@@ -468,7 +467,7 @@ def del_user(user_id):
         sql_connect = sql_var.connect()
         cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
 
-        cursor.execute("DELETE FROM userInfo U WHERE U.userId=%s", user_id)
+        cursor.execute("DELETE FROM userinfo U WHERE U.userId=%s", user_id)
         sql_connect.commit()
 
         # Close SQL connection
