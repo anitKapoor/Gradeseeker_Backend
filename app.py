@@ -8,12 +8,13 @@ import hashlib as hs
 from flask_cors import CORS as cors
 
 
+
 # Create vars for Flask and MySQL
 app = Flask(__name__)
 cors(app=app)
 sql_var = MySQL()
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '12345'
+app.config['MYSQL_DATABASE_PASSWORD'] = '1234'
 app.config['MYSQL_DATABASE_DB'] = 'gradeseeker'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
@@ -99,10 +100,15 @@ def classes():
     cursor = sql_connect.cursor(pymysql.cursors.DictCursor)
 
     crn = request.form.get('crn')
+    cat = request.form.get('cat')
 
     try: 
-        cursor.execute("SELECT p.firstName, p.lastName, t.semester FROM teaches t JOIN professors p ON t.profId=p.id WHERE t.crn=%s", crn)
-        rows = cursor.fetchall()      
+        if(cat == "profs"):
+            cursor.execute("SELECT p.firstName, p.lastName, t.semester FROM teaches t JOIN professors p ON t.profId=p.id WHERE t.crn=%s", crn)
+            rows = cursor.fetchall()
+        if(cat == "stats"):
+            cursor.execute("SELECT g.crn, ROUND(AVG(s.standardDeviation), 2) AS std, ROUND(AVG(s.perc4s),2) AS perc FROM grades g NATURAL JOIN statistics s WHERE g.crn=%s", crn)
+            rows = cursor.fetchall()
                 
         if rows != None:
             resp = jsonify(rows)
