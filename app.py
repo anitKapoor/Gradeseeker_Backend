@@ -14,7 +14,7 @@ app = Flask(__name__)
 cors(app=app)
 sql_var = MySQL()
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '1234'
+app.config['MYSQL_DATABASE_PASSWORD'] = '12345'
 app.config['MYSQL_DATABASE_DB'] = 'gradeseeker'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
@@ -184,7 +184,7 @@ def browse():
 
     try: 
         if(cat == "professors"):
-            cursor.execute("SELECT p.id, p.firstName, p.lastName, ABS(ROUND(r.ratings, 1)) FROM professors p JOIN ratings r ON p.id=r.profId LIMIT 20 OFFSET " + str(off*20))
+            cursor.execute("SELECT p.id, p.firstName, p.lastName, ABS(ROUND(r.ratings, 1)) as ratings FROM professors p JOIN ratings r ON p.id=r.profId LIMIT 20 OFFSET " + str(off*20))
         else:
             cursor.execute("SELECT c.crn, c.courseCode, c.courseTitle, ROUND(AVG(s.averageGPA), 2) AS av FROM courses c NATURAL JOIN grades g JOIN statistics s ON s.gradeId=g.gradeId GROUP BY g.crn LIMIT 20 OFFSET " + str(off*20))
         # SELECT p.firstName, p.lastName, r.ratings FROM professors p JOIN ratings r ON p.id=r.profId LIMIT 20 OFFSET 0 
@@ -368,7 +368,7 @@ def get_professor(professor_name):
                    GROUP BY C.CourseCode;"""
 
         cursor.execute(query)
-        rows = cursor.fetchmany()
+        rows = cursor.fetchall()
         
         resp = jsonify(data = json.dumps(rows))
 
